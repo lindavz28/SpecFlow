@@ -125,7 +125,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
         public void Should_be_able_to_specify_a_plugin()
         {
             StringConfigProvider configurationHolder = GetConfigWithPlugin();
-            TestRunContainerBuilder.DefaultDependencyProvider = new TestDefaultDependencyProvider(new Mock<IRuntimePlugin>().Object);
+            new TestRunContainerBuilder().DefaultDependencyProvider = new TestDefaultDependencyProvider(new Mock<IRuntimePlugin>().Object);
             TestRunContainerBuilder.CreateDefaultContainer(configurationHolder);
         }
 
@@ -134,7 +134,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
         {
             StringConfigProvider configurationHolder = GetConfigWithPlugin();
 
-            TestRunContainerBuilder.DefaultDependencyProvider = new TestDefaultDependencyProvider(new PluginWithCustomDependency());
+            new TestRunContainerBuilder().DefaultDependencyProvider = new TestDefaultDependencyProvider(new PluginWithCustomDependency());
             var container = TestRunContainerBuilder.CreateDefaultContainer(configurationHolder);
             var customDependency = container.Resolve<ICustomDependency>();
             customDependency.Should().BeOfType(typeof(CustomDependency));
@@ -145,7 +145,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
         {
             StringConfigProvider configurationHolder = GetConfigWithPlugin();
 
-            TestRunContainerBuilder.DefaultDependencyProvider = new TestDefaultDependencyProvider(new PluginWithCustomConfiguration(
+            new TestRunContainerBuilder().DefaultDependencyProvider = new TestDefaultDependencyProvider(new PluginWithCustomConfiguration(
                 conf => conf.StopAtFirstError = true));
             var container = TestRunContainerBuilder.CreateDefaultContainer(configurationHolder);
             var runtimeConfiguration = container.Resolve<RuntimeConfiguration>();
@@ -157,7 +157,7 @@ namespace TechTalk.SpecFlow.RuntimeTests.Infrastructure
         {
             StringConfigProvider configurationHolder = GetConfigWithPlugin();
 
-            TestRunContainerBuilder.DefaultDependencyProvider = new TestDefaultDependencyProvider(new PluginWithCustomTestRunnerFactoryWhenStopAtFirstErrorIsTrue());
+            new TestRunContainerBuilder().DefaultDependencyProvider = new TestDefaultDependencyProvider(new PluginWithCustomTestRunnerFactoryWhenStopAtFirstErrorIsTrue());
 
             // with default unit test provider, the plugin should not change the default factory
             var container = TestRunContainerBuilder.CreateDefaultContainer(configurationHolder);

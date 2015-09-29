@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using BoDi;
 using System.Linq;
+using System.Threading;
 using TechTalk.SpecFlow.Configuration;
 using TechTalk.SpecFlow.UnitTestProvider;
 
@@ -14,15 +15,20 @@ namespace TechTalk.SpecFlow.Infrastructure
 
     public class TestRunContainerBuilder : ITestRunContainerBuilder
     {
-        public static IDefaultDependencyProvider DefaultDependencyProvider = new DefaultDependencyProvider();
+        private ThreadLocal<IDefaultDependencyProvider> _defaultDependencyProvider = new ThreadLocal<IDefaultDependencyProvider>(() => new DefaultDependencyProvider());
 
-        private readonly IDefaultDependencyProvider defaultDependencyProvider;
+        internal IDefaultDependencyProvider DefaultDependencyProvider
+        {
+            get { return _defaultDependencyProvider.Value; }
+
+            set { _defaultDependencyProvider.Value = value; }
+        }
 
         public TestRunContainerBuilder(IDefaultDependencyProvider defaultDependencyProvider = null)
         {
-            this.defaultDependencyProvider = defaultDependencyProvider ?? DefaultDependencyProvider;
+            _defaultDependencyProvider.Value = defaultDependencyProvider ?? DefaultDependencyProvider;
         }
-
+        
         public virtual IObjectContainer CreateContainer(IRuntimeConfigurationProvider configurationProvider = null)
         {
             var container = new ObjectContainer();
@@ -78,7 +84,7 @@ namespace TechTalk.SpecFlow.Infrastructure
 
         protected virtual void RegisterDefaults(ObjectContainer container)
         {
-            defaultDependencyProvider.RegisterDefaults(container);
+            _defaultDependencyProvider.Value.RegisterDefaults(container);
         }
 
         // used by tests

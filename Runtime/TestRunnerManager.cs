@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
+using TechTalk.SpecFlow.Assist;
 using TechTalk.SpecFlow.Async;
 using TechTalk.SpecFlow.Infrastructure;
 
@@ -14,18 +16,23 @@ namespace TechTalk.SpecFlow
 
     public class TestRunnerManager : ITestRunnerManager, IDisposable
     {
-        public static ITestRunnerManager Instance { get; internal set; }
+        // Lindavz - my addition, think this is needed but not sure
+        private static readonly ThreadLocal<ITestRunnerManager> _instance = new ThreadLocal<ITestRunnerManager>( () => new TestRunnerManager() );
 
+        public static ITestRunnerManager Instance
+        {
+            get { return _instance.Value; }
+            private set { _instance.Value = value; }
+        }
         static TestRunnerManager()
         {
-            Instance = new TestRunnerManager();
         }
 
-        private readonly ITestRunContainerBuilder testRunContainerBuilder;
+        private readonly ITestRunContainerBuilder _testRunContainerBuilder;
 
         public TestRunnerManager(ITestRunContainerBuilder testRunContainerBuilder = null)
         {
-            this.testRunContainerBuilder = testRunContainerBuilder ?? new TestRunContainerBuilder();
+            _testRunContainerBuilder = testRunContainerBuilder ?? new TestRunContainerBuilder();
         }
 
         protected class TestRunnerKey
@@ -63,8 +70,8 @@ namespace TechTalk.SpecFlow
             }
         }
 
-        private readonly Dictionary<TestRunnerKey, ITestRunner> testRunnerRegistry = new Dictionary<TestRunnerKey, ITestRunner>();
-        private readonly object syncRoot = new object();
+        private readonly Dictionary<TestRunnerKey, ITestRunner> _testRunnerRegistry = new Dictionary<TestRunnerKey, ITestRunner>();
+        private readonly object _syncRoot = new object();
 
         public ITestRunner CreateTestRunner(Assembly testAssembly, bool async)
         {
@@ -73,7 +80,7 @@ namespace TechTalk.SpecFlow
 
         protected virtual ITestRunner CreateTestRunner(TestRunnerKey key)
         {
-            var container = testRunContainerBuilder.CreateContainer();
+            var container = _testRunContainerBuilder.CreateContainer();
             if (key.Async)
             {
                 //TODO: better support this in the DI container
@@ -91,14 +98,14 @@ namespace TechTalk.SpecFlow
         protected virtual ITestRunner GetTestRunner(TestRunnerKey key)
         {
             ITestRunner testRunner;
-            if (!testRunnerRegistry.TryGetValue(key, out testRunner))
+            if (!_testRunnerRegistry.TryGetValue(key, out testRunner))
             {
-                lock(syncRoot)
+                lock(_syncRoot)
                 {
-                    if (!testRunnerRegistry.TryGetValue(key, out testRunner))
+                    if (!_testRunnerRegistry.TryGetValue(key, out testRunner))
                     {
                         testRunner = CreateTestRunner(key);
-                        testRunnerRegistry.Add(key, testRunner);
+                        _testRunnerRegistry.Add(key, testRunner);
                     }
                 }
             }
@@ -107,7 +114,7 @@ namespace TechTalk.SpecFlow
 
         public virtual void Dispose()
         {
-            testRunnerRegistry.Clear();
+            _testRunnerRegistry.Clear();
         }
 
         #region Static Methods
